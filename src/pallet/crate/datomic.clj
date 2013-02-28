@@ -2,7 +2,6 @@
   (:require 
    [pallet.actions :as actions]
    [pallet.api :as api]
-   [pallet.crate.java :as java]
    [pallet.crate :as crate]
    [pallet.config-file.format :as file-format]))
 
@@ -94,8 +93,6 @@
     (actions/user (:user settings) :home datomic-root
                   :shell :false :create-home true :system true)
     (println "after create user")
-   ; (java/install-java)
-    (println "after java")
     (make-datomic-directories settings)
     (println "after making directories")
     (write-config-file settings)
