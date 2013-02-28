@@ -1,6 +1,18 @@
+;; A Clojure library designed to work with pallet 0.8.0 and create a
+;; datomic instance.  This instance has been tested on Ubuntu with the
+;; free version of datomic.  I hope that this works with non-free
+;; versions as well but I don't know that process.  Pull requests are
+;; welcome. It is expected that you have installed Java in order for
+;; the service to start correctly.   This crate will
+;; * Download datomic based upon the type and version
+;; * Unzip datomic into /opt/local/datomic/<version>
+;; * Update a soft lknk /opt/local/datomic/current ->
+;;                                  /opt/local/datomic/version
+;; * Install the upstart service (IT DOES NOT RUN THE SERVICE)
 (ns pallet.crate.datomic
   (:require 
    [pallet.actions :as actions]
+   [pallet.action :as action]
    [pallet.api :as api]
    [pallet.crate :as crate]
    [pallet.config-file.format :as file-format]))
@@ -49,12 +61,9 @@
     (actions/directory (:log-dir config) :path true
                        :owner user :group group)))
 
-(defn- make-directory
-  [dir]
-  (println "Let's make a directory = " dir)
-  (actions/directory dir :path true :owner "root" :group "root"))
-
 (defn- write-config-file
+  "Writes out the config file with user and group permissions
+   to config-path the config data."
   [{:keys [user group config-path config] :as settings}]
   (let [
         data-to-write (file-format/name-values config)]
@@ -62,6 +71,8 @@
                               :content data-to-write)))
 
 (defn- upstart-file-create
+  "Upload the datomic upstart script from the resources directory and
+   replace out template values"
   [{:keys [config-path user config]} root]
   (actions/service-script "datomic"
                           :template datomic-upstart
@@ -76,47 +87,60 @@
                                     :datomic-user user} {})))
 
 (crate/defplan datomic-settings
-  [{:keys [config-file config type version instance-id memory-index-max] :as settings}]
-  (let [options (when memory-index-max {:memory-index-max memory-index-max})]
-    (crate/assoc-settings :datomic (merge *default-settings* settings options))))
+  "Captures settings for datomic. Please see *default-settings* for more information about what
+   the defaults are.
+-  :type Type of the transactor.  This is used to concatenate to figure out what file should be downloaded.
+-  :version Version to download
+-  :config
+   -  :protocol Protocol for datomic to use
+   -  :host The host for datomic to use
+   -  :port The port to start datomic on (remember it will use 3 consecutive ports starting at port)
+   -  :log-dir The log directory for datomic
+   -  :data-dir The data directory for datomic
+   -  :memory-index-max Optional"
+  [{:keys [config-file config type version instance-id] :as settings}]
+  (let [options (when (:memory-index-max config) {:memory-index-max (:memory-index-max config)})]
+    (crate/assoc-settings :datomic (merge *default-settings* settings options) {:instance-id instance-id})))
 
 (crate/defplan install-datomic
   "Install datomic"
   [& {:keys [instance-id]}]
   (let [
-        settings (crate/get-settings :datomic)
+        settings (crate/get-settings :datomic {:instance-id instance-id :default ::no-settings})
+        {:keys [version type user group ]} settings
         version (:version settings)
         type (:type settings)
         url (download-url version type)]
-    (make-directory "/opt/local")
-    (println "Creating the directory /opt/local")
-    (actions/user (:user settings) :home datomic-root
-                  :shell :false :create-home true :system true)
-    (println "after create user")
+    ;; Ensures that this directory call is before the actions/user
+    ;; call otherwise the actions/user call would fail because
+    ;; /opt/local directory is not created yet
+    (action/with-action-options {:always-before #{actions/user}}
+     (actions/directory "/opt/local" :path true :owner "root" :group "root"))
+    (actions/user user :home datomic-root
+                   :shell :false :create-home true :system true)
     (make-datomic-directories settings)
-    (println "after making directories")
     (write-config-file settings)
-    (println "after config file settings")
     (actions/packages
-      :yum ["unzip"]
-      :aptitude ["unzip"]
-      :pkgin ["unzip"])
-      (println "after unzip")
-     (actions/remote-directory
-       datomic-root
-       :url url
-       ;:md5 (md5s version)
-       :unpack :unzip
-       :owner (:user settings)
-       :group (:group settings))
-     (actions/symbolic-link (str datomic-root "/" (datomic-file-name version type))
-                            (create-current-path datomic-root)
-                            :action :create
-                            :owner (:user settings)
-                            :group (:group settings))
+     :yum ["unzip"]
+     :aptitude ["unzip"]
+     :pkgin ["unzip"])
+
+    (actions/remote-directory
+     datomic-root
+     :url url
+                                        ;:md5 (md5s version)
+     :unpack :unzip
+     :owner user
+     :group group)
+    (actions/symbolic-link (str datomic-root "/" (datomic-file-name version type))
+                           (create-current-path datomic-root)
+                           :action :create
+                           :owner user
+                           :group group)
     (upstart-file-create settings datomic-root)))
 
 (defn datomic
+  "Returns a service-spec for installing java"
   [settings]
   (api/server-spec :phases {:settings (api/plan-fn (datomic-settings settings))
                             :configure (api/plan-fn

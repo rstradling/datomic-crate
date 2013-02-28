@@ -1,6 +1,6 @@
 # datomic-crate
 
-A Clojure library designed to work with pallet 0.8.0 and create a datomic instance.  This instance has been tested on Ubuntu with the free version of datomic.  I don't believe there is anything preventing it from working with non-free versions but I don't have one so don't know the process.  
+A Clojure library designed to work with pallet 0.8.0 and create a datomic instance.  This instance has been tested on Ubuntu with the free version of datomic.  I don't believe there is anything preventing it from working with non-free versions but I don't have one so don't know the process. Pull requests are welcomed. 
 <b>It is expected that you have java installed on the machine already.</b>
 
 This crate will 
