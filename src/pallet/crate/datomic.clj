@@ -15,6 +15,7 @@
    [pallet.action :as action]
    [pallet.api :as api]
    [pallet.crate :as crate]
+   [pallet.template :as templ]
    [pallet.config-file.format :as file-format]))
 
 (def datomic-upstart "crate/datomic/datomic.conf")
@@ -73,7 +74,7 @@
 (defn- upstart-file-create
   "Upload the datomic upstart script from the resources directory and
    replace out template values"
-  [{:keys [config-path user config]} root]
+  [{:keys [config-path user config] :as settings} root]
   (actions/service-script "datomic"
                           :template datomic-upstart
                           :service-impl :upstart
