@@ -1,5 +1,5 @@
 ;; A Clojure library designed to work with pallet 0.8.0 and create a
-;; datomic instance.  This instance has been tested on Ubuntu with the
+;; datomic instance.  This instance has been tested on Ubuntu and RHEL with the
 ;; free version of datomic.  I hope that this works with non-free
 ;; versions as well but I don't know that process.  Pull requests are
 ;; welcome. It is expected that you have installed Java in order for
@@ -79,13 +79,12 @@
                           :template datomic-upstart
                           :service-impl :upstart
                           :literal true
-                          :values (merge
-                                   {:datomic-current-root
-                                    (create-current-path root)
-                                    :datomic-conf-file (str config-path "/"
-                                                            config-file-name)
-                                    :datomic-log-file (:log-dir config)
-                                    :datomic-user user} {})))
+                          :values {:datomic-current-root
+                                   (create-current-path root)
+                                   :datomic-conf-file (str config-path "/"
+                                                           config-file-name)
+                                   :datomic-log-file (:log-dir config)
+                                   :datomic-user user}))
 
 (crate/defplan datomic-settings
   "Captures settings for datomic. Please see *default-settings* for more information about what
