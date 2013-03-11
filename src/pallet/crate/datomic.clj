@@ -11,6 +11,7 @@
 ;; * Install the upstart service (IT DOES NOT RUN THE SERVICE)
 (ns pallet.crate.datomic
   (:require 
+   pallet.node
    [pallet.actions :as actions]
    [pallet.action :as action]
    [pallet.api :as api]
@@ -99,8 +100,11 @@
    -  :data-dir The data directory for datomic
    -  :memory-index-max Optional"
   [{:keys [config-file config type version instance-id] :as settings}]
-  (let [options (when (:memory-index-max config) {:memory-index-max (:memory-index-max config)})]
-    (crate/assoc-settings :datomic (merge *default-settings* settings options) {:instance-id instance-id})))
+  (let [options (when (:memory-index-max config) {:memory-index-max (:memory-index-max config)})
+        node (crate/target-node)
+        private_ip (pallet.node/private-ip node)
+        public_ip (pallet.node/primary-ip node)]
+    (crate/assoc-settings :datomic (merge *default-settings* (assoc settings :config (assoc config :host private_ip :alt-host public_ip)) options) {:instance-id instance-id})))
 
 (crate/defplan install-datomic
   "Install datomic"
