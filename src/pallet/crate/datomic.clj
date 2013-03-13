@@ -87,6 +87,14 @@
                                    :datomic-log-file (:log-dir config)
                                    :datomic-user user}))
 
+(defn- add-to-config-entry
+  "For the config entry this will associate the key to the value if
+  the value is not null.  If the value is null it returns the original map"
+  [map key value]
+  (if (not= value nil)
+    (assoc-in map [:config key] value)
+    map))
+
 (crate/defplan datomic-settings
   "Captures settings for datomic. Please see *default-settings* for more information about what
    the defaults are.
@@ -103,8 +111,11 @@
   (let [options (when (:memory-index-max config) {:memory-index-max (:memory-index-max config)})
         node (crate/target-node)
         private_ip (pallet.node/private-ip node)
-        public_ip (pallet.node/primary-ip node)]
-    (crate/assoc-settings :datomic (merge *default-settings* (assoc settings :config (assoc config :host private_ip :alt-host public_ip)) options) {:instance-id instance-id})))
+        public_ip (pallet.node/primary-ip node)
+        merger (-> (merge *default-settings* settings options)
+                    (add-to-config-entry :host private_ip)
+                    (add-to-config-entry :alt-host public_ip))]
+    (crate/assoc-settings :datomic merger {:instance-id instance-id})))
 
 (crate/defplan install-datomic
   "Install datomic"
