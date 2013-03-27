@@ -24,7 +24,7 @@ Artifacts are released [released to Clojars](https://clojars.org/strad/datomic-c
 ### The Most Recent Release
 With Leiningen
 ```clojure
-   [org.clojars.strad/datomic-crate "0.8.2"]
+   [org.clojars.strad/datomic-crate "0.8.3"]
 ```
 
 With Maven
@@ -32,7 +32,7 @@ With Maven
    <dependency>
       <groupId>org.clojars.strad</groupId>
       <artifactId>datomic-crate</artifactId>
-      <version>0.8.2</version>
+      <version>0.8.3</version>
    </dependency>
 ```
 
