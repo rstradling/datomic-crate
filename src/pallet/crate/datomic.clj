@@ -26,7 +26,7 @@
 
 (def ^{:dynamic true} *default-settings*
   {
-   :version "0.8.3789"
+   :version "0.8.3861"
    :type "free"
    :user "datomic"
    :group "datomic"
@@ -158,6 +158,6 @@
   "Returns a service-spec for installing java"
   [settings]
   (api/server-spec :phases {:settings (api/plan-fn (datomic-settings settings))
-                            :configure (api/plan-fn
+                            :install (api/plan-fn
                                         (install-datomic))}))
 
