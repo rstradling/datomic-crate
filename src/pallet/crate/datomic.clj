@@ -26,7 +26,7 @@
 
 (def ^{:dynamic true} *default-settings*
   {
-   :version "0.8.3861"
+   :version "0.8.3889"
    :type "free"
    :user "datomic"
    :group "datomic"
@@ -52,7 +52,7 @@
   [version type]
   (format "http://downloads.datomic.com/%s/%s.zip" version  (datomic-file-name version type)))
 
-(defn- make-datomic-directories
+(defn make-datomic-directories
   "Make the datomic directories"
   [{:keys [config-path user group] :as settings}]
   (let [config (:config settings)]

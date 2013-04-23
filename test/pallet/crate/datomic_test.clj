@@ -1,7 +1,23 @@
-(ns pallet.crate.datomic
-  (:use clojure.test
-        pallet.crate.datomic))
+(ns pallet.crate.datomic-test
+  (:require [clojure.test :refer [deftest is testing]]
+            [pallet.crate.datomic :as datomic]
+            [pallet.action :refer [with-action-options]]
+            [pallet.actions :refer [directory user]]
+            [pallet.build-actions :as build-actions]
+            [clojure.pprint :refer [pprint]]) 
+  (:use pallet.test-utils))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+(deftest create-current-path-test 
+  (testing "Current path works"
+    (is (= "free/current" (datomic/create-current-path "free")))))
+
+(def settings
+  {:version "0.8.3889"
+   :type "free"
+   :user "datomic"
+   :group "datomic"
+   :config-file "/etc/datomic"
+   :config {:protocol "free" :host "localhost" :port "4334"
+            :data-dir "/var/lib/datomic/data"
+            :log-dir "/var/log/datomic"}})
+
