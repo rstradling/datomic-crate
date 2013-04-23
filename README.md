@@ -24,7 +24,7 @@ Artifacts are released [released to Clojars](https://clojars.org/strad/datomic-c
 ### The Most Recent Release
 With Leiningen
 ```clojure
-   [org.clojars.strad/datomic-crate "0.8.3"]
+  [org.clojars.strad/datomic-crate "0.8.6"]
 ```
 
 With Maven
@@ -32,7 +32,7 @@ With Maven
    <dependency>
       <groupId>org.clojars.strad</groupId>
       <artifactId>datomic-crate</artifactId>
-      <version>0.8.3</version>
+      <version>0.8.6</version>
    </dependency>
 ```
 
@@ -50,7 +50,7 @@ The datomic crate uses the folowing settings...
 ```clj
 (def ^{:dynamic true} *default-settings*
   {
-   :version "0.8.3789"
+   :version "0.8.3889"
    :type "free"
    :user "datomic"
    :group "datomic"
