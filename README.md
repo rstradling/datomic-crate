@@ -24,7 +24,7 @@ Artifacts are released [released to Clojars](https://clojars.org/strad/datomic-c
 ### The Most Recent Release
 With Leiningen
 ```clojure
-  [org.clojars.strad/datomic-crate "0.8.6"]
+  [org.clojars.strad/datomic-crate "0.8.7"]
 ```
 
 With Maven
@@ -32,7 +32,7 @@ With Maven
    <dependency>
       <groupId>org.clojars.strad</groupId>
       <artifactId>datomic-crate</artifactId>
-      <version>0.8.6</version>
+      <version>0.8.7</version>
    </dependency>
 ```
 
@@ -41,7 +41,7 @@ The datomic crate defines the datomic function, that takes a settings map and re
 
 ```clj
 (group-spec "my-node-with-datomic"
-   :extends [(pallet.crate.datomic/datomic {})])
+   :extends [(pallet.crate.datomic/server-spec {})])
 ```
 
 ## Settings
@@ -50,9 +50,12 @@ The datomic crate uses the folowing settings...
 ```clj
 (def ^{:dynamic true} *default-settings*
   {
-   :version "0.8.3889"
+   :version "0.8.4020.26"
    :type "free"
    :user "datomic"
+   :supervisor :upstart
+   :service-name "datomic"
+   :verify false ;; Don't verify the conf script
    :group "datomic"
    :config-path "/etc/datomic"
    :config {:protocol "free", :host "localhost" :port "4334"
@@ -89,10 +92,10 @@ The host to use.  Defaults to `"localhost"`
 The port to use.  Defaults to `"4334`"
 
 `:data-dir`
-The data directory to save the dbs to.  Defaults to `"var/lib/datomic/data"`
+The data directory to save the dbs to.  Defaults to `"/var/lib/datomic/data"`
 
 `:log-dir`
-The log directory to save the logs to.  Defaults to `"var/log/datomic"`
+The log directory to save the logs to.  Defaults to `"/var/log/datomic"`
 
 `:memory-index-max`
 Optional.  Defaults to no key and no value. (i.e. nothing is written to the config file)

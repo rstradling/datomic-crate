@@ -16,7 +16,9 @@
    [pallet.action :as action]
    [pallet.api :as api]
    [pallet.crate :as crate]
+   [pallet.crate.service :as svc]
    [pallet.template :as templ]
+   [pallet.crate.upstart :as upstart]
    [pallet.config-file.format :as file-format]))
 
 (def datomic-upstart "crate/datomic/datomic.conf")
@@ -26,16 +28,17 @@
 
 (def ^{:dynamic true} *default-settings*
   {
-   :version "0.8.3889"
+   :version "0.8.4020.26"
    :type "free"
    :user "datomic"
    :group "datomic"
+   :service-name "datomic"
+   :supervisor :upstart
+   :verify false ;; Don't verify the conf script 
    :config-path "/etc/datomic"
    :config {:protocol "free", :host "localhost" :port "4334"
             :data-dir "/var/lib/datomic/data"
             :log-dir "/var/log/datomic"}})
-
-(def md5s {})
 
 (defn- datomic-file-name
   "Returns the name of the datomic to download (minus the file extension)
@@ -72,20 +75,23 @@
     (actions/remote-file (str config-path "/" config-file-name)
                               :content data-to-write)))
 
-(defn- upstart-file-create
-  "Upload the datomic upstart script from the resources directory and
-   replace out template values"
-  [{:keys [config-path user config] :as settings} root]
-  (actions/service-script "datomic"
-                          :template datomic-upstart
-                          :service-impl :upstart
-                          :literal true
-                          :values {:datomic-current-root
-                                   (create-current-path root)
-                                   :datomic-conf-file (str config-path "/"
-                                                           config-file-name)
-                                   :datomic-log-file (:log-dir config)
-                                   :datomic-user user}))
+(defmethod svc/supervisor-config-map [:datomic :upstart]
+  [_ {:keys [config-path 
+             service-name user config] :as settings} options]
+  {:service-name service-name 
+   :start-on (str "runlevel [2345]\n" 
+                  "start on (started network-interface\n"
+                                  "or started network-manager\n"
+                                  "or started networking)") 
+   :respawn true 
+   :script (str "chdir " (create-current-path datomic-root) "\n"
+                "exec sudo -u " user " bin/transactor " 
+                config-path "/" config-file-name " >> " (:log-dir config) 
+                "/datomic.log 2>&1")
+   :stop-on (str "(stopping network-interface\n"
+               "or stopping network-manager\n"
+               "or stopping networking)\n"
+             "stop on runlevel [016]")})
 
 (defn- add-to-config-entry
   "For the config entry this will associate the key to the value if
@@ -95,7 +101,7 @@
     (assoc-in map [:config key] value)
     map))
 
-(crate/defplan datomic-settings
+(crate/defplan settings
   "Captures settings for datomic. Please see *default-settings* for more information about what
    the defaults are.
 -  :type Type of the transactor.  This is used to concatenate to figure out what file should be downloaded.
@@ -115,9 +121,11 @@
         merger (-> (merge *default-settings* settings options)
                     (add-to-config-entry :host private_ip)
                     (add-to-config-entry :alt-host public_ip))]
+    (upstart/settings merger)
+    (svc/supervisor-config :datomic merger {:instance-id instance-id})
     (crate/assoc-settings :datomic merger {:instance-id instance-id})))
 
-(crate/defplan install-datomic
+(crate/defplan install
   "Install datomic"
   [& {:keys [instance-id]}]
   (let [
@@ -143,7 +151,6 @@
     (actions/remote-directory
      datomic-root
      :url url
-                                        ;:md5 (md5s version)
      :unpack :unzip
      :owner user
      :group group)
@@ -151,13 +158,21 @@
                            (create-current-path datomic-root)
                            :action :create
                            :owner user
-                           :group group)
-    (upstart-file-create settings datomic-root)))
+                           :group group)))
 
-(defn datomic
-  "Returns a service-spec for installing java"
-  [settings]
-  (api/server-spec :phases {:settings (api/plan-fn (datomic-settings settings))
+(crate/defplan restart
+  "Restart datomic"
+  [& {:keys [instance-id]}]
+  (let [settings (crate/get-settings :upstart {:instance-id instance-id})]
+    (svc/service settings {:action :restart})))
+
+(defn server-spec 
+  "Returns a service-spec for installing datomic"
+  [sets & {:keys [instance-id] :as options}]
+  (api/server-spec :phases {:settings (api/plan-fn (settings sets))
                             :install (api/plan-fn
-                                        (install-datomic))}))
+                                        (install)
+                                       (upstart/install options))
+                            :configure (api/plan-fn (upstart/configure options))
+                            :restart (api/plan-fn (restart options))}))
 

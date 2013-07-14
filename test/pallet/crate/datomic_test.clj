@@ -3,7 +3,6 @@
             [pallet.crate.datomic :as datomic]
             [pallet.action :refer [with-action-options]]
             [pallet.actions :refer [directory user]]
-            [pallet.build-actions :as build-actions]
             [clojure.pprint :refer [pprint]]) 
   (:use pallet.test-utils))
 

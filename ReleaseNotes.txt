@@ -1,0 +1,8 @@
+Release 0.8.7
+THIS IS NOT A BACKWARDS COMPATIBLE RELEASE BUT THE CHANGES ARE PRETTY MINOR
+AND JUST MEANT TO MATCH OTHER CRATES BETTER
+* Upgraded to the latest RC for pallet 0.8.*
+* Changed some of the function names to better match with newest conventions.
+* No longer user the deprecated upstart apis and now plug-in to the 
+pallet.crate.server api.
+
