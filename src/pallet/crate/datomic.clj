@@ -64,7 +64,10 @@
     (actions/directory (:data-dir config) :path true
                        :owner user :group group)
     (actions/directory (:log-dir config) :path true
-                       :owner user :group group)))
+                       :owner user :group group)
+    (actions/file (str (:log-dir config) "/datomic.log")
+                 :action :touch :owner user
+                 :group group :mode 644)))
 
 (defn- write-config-file
   "Writes out the config file with user and group permissions
@@ -128,9 +131,10 @@
 (crate/defplan install
   "Install datomic"
   [& {:keys [instance-id]}]
+  (println "LSDFJLSDJFLSDJF")
   (let [
         settings (crate/get-settings :datomic {:instance-id instance-id :default ::no-settings})
-        {:keys [version type user group ]} settings
+        {:keys [version type user group config]} settings
         version (:version settings)
         type (:type settings)
         url (download-url version type)]
@@ -138,9 +142,9 @@
     ;; call otherwise the actions/user call would fail because
     ;; /opt/local directory is not created yet
     (action/with-action-options {:always-before #{actions/user}}
-     (actions/directory "/opt/local" :path true :owner "root" :group "root"))
+    (actions/directory "/opt/local" :path true :owner "root" :group "root"))
     (actions/user user :home datomic-root
-                   :shell :false :create-home true :system true)
+                   :shell :bash :create-home true :system false)
     (make-datomic-directories settings)
     (write-config-file settings)
     (actions/packages
@@ -160,19 +164,36 @@
                            :owner user
                            :group group)))
 
-(crate/defplan restart
-  "Restart datomic"
+(crate/defplan restarter 
+  "Install datomic"
   [& {:keys [instance-id]}]
-  (let [settings (crate/get-settings :upstart {:instance-id instance-id})]
-    (svc/service settings {:action :restart})))
+  (let [settings (crate/get-settings :datomic {:instance-id instance-id})]
+    (svc/service settings {:action :restart})
+    )
+  )
+
+;(crate/defplan restart
+;  "Restart datomic"
+;  [& {:keys [instance-id]}]
+;  (println "IN RESTART")
+ ; (let [settings (crate/get-settings :datomic {:instance-id instance-id})]
+;    (println "Settings = " settings)
+;    (svc/service settings {:action :restart}))
+
+;)
 
 (defn server-spec 
   "Returns a service-spec for installing datomic"
   [sets & {:keys [instance-id] :as options}]
+  (println "HELRJELRJE")
   (api/server-spec :phases {:settings (api/plan-fn (settings sets))
                             :install (api/plan-fn
                                         (install)
                                        (upstart/install options))
                             :configure (api/plan-fn (upstart/configure options))
-                            :restart (api/plan-fn (restart options))}))
+                            :restart (api/plan-fn (restarter))
+                            
+                                      }
+                   
+                   ))
 
