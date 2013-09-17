@@ -76,7 +76,8 @@
   (let [
         data-to-write (file-format/name-values config)]
     (actions/remote-file (str config-path "/" config-file-name)
-                              :content data-to-write)))
+                              :content data-to-write
+                              :overwrite-changes true)))
 
 (defmethod svc/supervisor-config-map [:datomic :upstart]
   [_ {:keys [config-path 
@@ -131,7 +132,6 @@
 (crate/defplan install
   "Install datomic"
   [& {:keys [instance-id]}]
-  (println "LSDFJLSDJFLSDJF")
   (let [
         settings (crate/get-settings :datomic {:instance-id instance-id :default ::no-settings})
         {:keys [version type user group config]} settings
@@ -175,7 +175,6 @@
 ;(crate/defplan restart
 ;  "Restart datomic"
 ;  [& {:keys [instance-id]}]
-;  (println "IN RESTART")
  ; (let [settings (crate/get-settings :datomic {:instance-id instance-id})]
 ;    (println "Settings = " settings)
 ;    (svc/service settings {:action :restart}))
