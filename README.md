@@ -32,7 +32,7 @@ With Maven
    <dependency>
       <groupId>org.clojars.strad</groupId>
       <artifactId>datomic-crate</artifactId>
-      <version>0.8.8</version>
+      <version>0.8.10</version>
    </dependency>
 ```
 
@@ -50,7 +50,7 @@ The datomic crate uses the folowing settings...
 ```clj
 (def ^{:dynamic true} *default-settings*
   {
-   :version "0.8.4020.26"
+   :version "0.9.4360"
    :type "free"
    :user "datomic"
    :supervisor :upstart
