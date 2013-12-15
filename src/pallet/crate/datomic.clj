@@ -28,16 +28,21 @@
 
 (def ^{:dynamic true} *default-settings*
   {
-   :version "0.8.4020.26"
+   :version "0.9.4360"
    :type "free"
    :user "datomic"
    :group "datomic"
    :service-name "datomic"
+   :overwrite-changes false ; Whether to overwrite the config file if
+                            ; it is there
    :supervisor :upstart
    :verify false ;; Don't verify the conf script 
    :config-path "/etc/datomic"
    :config {:protocol "free", :host "localhost" :port "4334"
             :data-dir "/var/lib/datomic/data"
+            :object-cache-max "128m"
+            :memory-index-threshold "32m"
+            :memory-index-max "128m"
             :log-dir "/var/log/datomic"}})
 
 (defn- datomic-file-name
@@ -53,7 +58,7 @@
 (defn- download-url
   "The url for downloading datomic"
   [version type]
-  (format "http://downloads.datomic.com/%s/%s.zip" version  (datomic-file-name version type)))
+  (format "http://my.datomic.com/downloads/%s/%s" type version))
 
 (defn make-datomic-directories
   "Make the datomic directories"
@@ -72,15 +77,18 @@
 (defn- write-config-file
   "Writes out the config file with user and group permissions
    to config-path the config data."
-  [{:keys [user group config-path config] :as settings}]
+  [{:keys [user group config-path config overwrite-changes] :as settings}]
   (let [
         data-to-write (file-format/name-values config)]
+    
     (actions/remote-file (str config-path "/" config-file-name)
-                              :content data-to-write)))
+                         :content data-to-write
+                         :overwrite-changes overwrite-changes)))
 
 (defmethod svc/supervisor-config-map [:datomic :upstart]
   [_ {:keys [config-path 
              service-name user config] :as settings} options]
+
   {:service-name service-name 
    :start-on (str "runlevel [2345]\n" 
                   "start on (started network-interface\n"
@@ -131,7 +139,6 @@
 (crate/defplan install
   "Install datomic"
   [& {:keys [instance-id]}]
-  (println "LSDFJLSDJFLSDJF")
   (let [
         settings (crate/get-settings :datomic {:instance-id instance-id :default ::no-settings})
         {:keys [version type user group config]} settings
@@ -168,14 +175,11 @@
   "Install datomic"
   [& {:keys [instance-id]}]
   (let [settings (crate/get-settings :datomic {:instance-id instance-id})]
-    (svc/service settings {:action :restart})
-    )
-  )
+    (svc/service settings {:action :restart})))
 
 ;(crate/defplan restart
 ;  "Restart datomic"
 ;  [& {:keys [instance-id]}]
-;  (println "IN RESTART")
  ; (let [settings (crate/get-settings :datomic {:instance-id instance-id})]
 ;    (println "Settings = " settings)
 ;    (svc/service settings {:action :restart}))
@@ -185,15 +189,10 @@
 (defn server-spec 
   "Returns a service-spec for installing datomic"
   [sets & {:keys [instance-id] :as options}]
-  (println "HELRJELRJE")
   (api/server-spec :phases {:settings (api/plan-fn (settings sets))
                             :install (api/plan-fn
                                         (install)
                                        (upstart/install options))
                             :configure (api/plan-fn (upstart/configure options))
-                            :restart (api/plan-fn (restarter))
-                            
-                                      }
-                   
-                   ))
+                            :restart (api/plan-fn (restarter))}))
 
