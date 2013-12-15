@@ -24,7 +24,7 @@ Artifacts are released [released to Clojars](https://clojars.org/strad/datomic-c
 ### The Most Recent Release
 With Leiningen
 ```clojure
-  [org.clojars.strad/datomic-crate "0.8.8"]
+  [org.clojars.strad/datomic-crate "0.8.10"]
 ```
 
 With Maven
@@ -55,11 +55,15 @@ The datomic crate uses the folowing settings...
    :user "datomic"
    :supervisor :upstart
    :service-name "datomic"
+   :overwrite-changes false ; Whether to overwrite config file
    :verify false ;; Don't verify the conf script
    :group "datomic"
    :config-path "/etc/datomic"
    :config {:protocol "free", :host "localhost" :port "4334"
             :data-dir "/var/lib/datomic/data"
+            :memory-index-threshold "32m"
+            :memory-index-max "128m"
+            :oject-cache-max "128m"
             :log-dir "/var/log/datomic"}})
 ```
 
@@ -98,16 +102,18 @@ The data directory to save the dbs to.  Defaults to `"/var/lib/datomic/data"`
 The log directory to save the logs to.  Defaults to `"/var/log/datomic"`
 
 `:memory-index-max`
-Optional.  Defaults to no key and no value. (i.e. nothing is written to the config file)
+Defaults to no key and no value. (i.e. nothing is written to the config file)
 
 
 
-
+Please note that bin/transactor the  java min and max heap sizes are set to 1 GB via the datomic download.
+Depending on the cloud provider and machine you use it may not start because you don't have that much
+memory.
 
 
 
 ## License
 
-Copyright © 2013 FIXME
+Copyright © 2013 Ryan Stradling
 
 Distributed under the Eclipse Public License, the same as Clojure.

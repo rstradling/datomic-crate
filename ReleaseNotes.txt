@@ -1,3 +1,9 @@
+Release 0.8.10
+* Updated to latest datomic and this caused some config file changes
+that are needed.
+* Added support to overwrite the remote-file-copy of the config file.
+* By default uses Pallet RC 4.
+
 Release 0.8.8
 * Minor bug fix for restart action and log file
 
